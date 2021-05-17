@@ -93,62 +93,10 @@ INGRESS= "dc-ig-lib-ga-1589529604-f72ef11f3ab089a8c677044eb28292cd-0000.au-syd.c
 
 
 
-    stage('SonarQube Code Analysis') {
-	   when {
-               beforeOptions true
-               expression { env.SONARQUBE_URL }
-           }
-           steps {
-             script{
-                   withMaven(
-                   maven: 'maven-3',
-	           mavenLocalRepo: '.repository'
-		   ){
-                   sh '''
-		      mkdir .sonar .sonar/cache .scannerwork
-                      chmod -R 777 .sonar
-                      chmod -R 777 .scannerwork
-		      export SONAR_USER_HOME=${WORKSPACE}
-		      mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.3.0.603:sonar \
-		      -f pom.xml \
-		      -Dsonar.host.url=$SONARQUBE_URL  \
-		      -Dsonar.projectKey=${NAMESPACE}-${DEPLOYMENT_NAME} \
-		      -Dsonar.projectName=${NAMESPACE}-${DEPLOYMENT_NAME} \
-		      -Dsonar.language=java \
-		      -Dsonar.sources=. \
-		      -Dsonar.java.binaries=target/classes \
-		      -Dsonar.tests=. \
-		      -Dsonar.test.inclusions=**/*Test*/* \
-		      -Dsonar.exclusions=target/**/*.class
-		   '''
-		   }
-                 }
-             }
-        }
 
-stage("Quality Gate") {
-            steps {
-		     container('openshift-cli') {
-		     withCredentials([usernamePassword(credentialsId: "${SONARQUBE_CREDENTIAL_ID}", usernameVariable: 'SONARQUBE_USER', passwordVariable: 'SONARQUBE_TOKEN')]){
-                    sh '''
-		    curl -u ${SONARQUBE_TOKEN}: ${SONARQUBE_URL}/api/qualitygates/project_status?projectKey=${NAMESPACE}-${DEPLOYMENT_NAME} -s > SONAR_RESPONSE
-		    cat SONAR_RESPONSE
-#		    grep "ERROR" SONAR_RESPONSE
-		    RC=`grep "ERROR" SONAR_RESPONSE` || true
-		    echo "RC=$RC ."
-		    if [ -z "$RC" ]
-		    then
-  			echo "QG Passed"
-		    else
-		        echo "QG Failed"
-			exit 1
-		    fi
-		    echo "QG checked"
-		    '''
-		     }
-		    }
-            }
-        }
+
+
+
 
 
 
